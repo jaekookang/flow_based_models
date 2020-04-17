@@ -3,8 +3,10 @@ Callbacks for train monitoring
 
 2020-04-15
 '''
+import ipdb as pdb
 import matplotlib.pyplot as plt
 import os
+import io
 import numpy as np
 from time import time, strftime, gmtime
 import tensorflow as tf
@@ -73,26 +75,30 @@ class NBatchLogger(tfkc.Callback):
 def make_image(init_data, model, title, direction='backward', is_image=False, sharexy=False):
     # direction='backward': data --> latent
     # direction='forward': latent --> data
-    import io
 
     samples = [init_data]
     names = []
     x = init_data
-
+    pdb.set_trace()
     if direction == 'backward':
         names = ['latent']
         for layer in reversed(model.layers):
-            x = layer.inverse(x)
-            samples.append(x.numpy())
+            x = layer.inverse(x).numpy()
+            samples.append(x)
             names.append(layer.name)
     elif direction == 'forward':
         names = ['sample']
         for layer in model.layers:
-            x = layer(x)
-            samples.append(x.numpy())
+            x = layer(x).numpy()
+            samples.append(x)
             names.append(layer.name)
     else:
         raise Exception('Must provide either "backward" or "forward"')
+
+    # Fix size
+    for i, sample in enumerate(samples):
+        if sample.ndim == 1:
+            samples[i] = sample.reshape((-1,2))
 
     if sharexy:
         f, arr = plt.subplots(1, len(samples),
@@ -135,20 +141,22 @@ def make_image(init_data, model, title, direction='backward', is_image=False, sh
 
 
 class TensorBoardImage(tfkc.Callback):
-    def __init__(self, hparams, is_image=False):
+    def __init__(self, inp_dim, n_display, log_dir, is_image=False):
         super().__init__()
-        self.hp = hparams
-        self.n_display = self.hp.n_display
-        self.n_sample = 400
+        self.inp_dim = inp_dim
+        self.n_display = n_display
+        self.log_dir = log_dir
+        self.n_sample = inp_dim
         if is_image:
             self.n_sample = 1
         self.is_image = is_image
-        self.X = tfd.MultivariateNormalDiag(loc=[0.]*self.hp.inp_dim)
+        self.X = tfd.MultivariateNormalDiag(loc=[0.]*self.inp_dim)
         self.x = self.X.sample(self.n_sample).numpy()
-        self.writer = tf.summary.create_file_writer(self.hp.logdir)
+        self.x = self.x.reshape(-1)
+        self.writer = tf.summary.create_file_writer(self.log_dir)
 
     def on_epoch_end(self, epoch, logs={}):
-        if ((epoch+1) % self.hp.n_display) == 0:
+        if ((epoch+1) % self.n_display) == 0:
             with self.writer.as_default():
                 image = make_image(self.x, self.model, title=epoch+1,
                                    is_image=self.is_image, sharexy=True)

@@ -105,7 +105,7 @@ class Scale(tfkl.Layer):
         super(Scale, self).__init__(**kwargs)
         self.inp_dim = inp_dim
         self.scaling = self.add_weight(name='scaling',
-                                       shape=(1, self.inp_dim),  # (1,768)
+                                       shape=(1, self.inp_dim),
                                        initializer='glorot_normal',
                                        trainable=True)
 
@@ -148,3 +148,7 @@ class NICE(tfk.Model):
         for i in reversed(range(self.hp.nice.n_couple_layer)):
             act = self.AffineLayers[i].inverse(act)
         return act
+
+def nice_loss(y_true, y_pred):
+    '''Loss function for NICE model'''
+    return tf.math.reduce_sum(0.5*y_pred**2)
