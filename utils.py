@@ -142,11 +142,12 @@ def visualize_moon(model, n_sample, direction='forward', sharexy=True, seed=0, x
             arr[i].set_ylim(ylim)
     return fig
 
-def animate_moon_gif(model, n_sample, n_couple_layer, filename=None):
+def animate_moon_gif(model, n_sample, filename=None):
     # Make GIF file
     # - Do `brew install imagemagick` or `apt install imagemagick` first
     from matplotlib import animation
     from IPython.display import HTML
+    n_layers = len(model.layers)
     interval = 100
     xlim = [-4, 4]
     ylim = [-4, 4]
@@ -173,7 +174,7 @@ def animate_moon_gif(model, n_sample, n_couple_layer, filename=None):
         return (paths,)
 
     anim = animation.FuncAnimation(
-        fig, animate, frames=40*(n_couple_layer+1), interval=interval, blit=False);
+        fig, animate, frames=40*(n_layers+1), interval=interval, blit=False);
     if filename is not None:
         anim.save(filename, writer='imagemagick', fps=60)
         print(filename, 'saved')
@@ -291,14 +292,10 @@ def visualize_mnist_layers(model, dataset, direction='inverse', sharexy=True, cm
             samples.append(x.numpy())
             names.append(layer.name)
 
-    if sharexy:
-        fig, arr = plt.subplots(1, len(samples), facecolor='white',
-                                figsize=(4 * (len(samples)), 4),
-                                sharex=True, sharey=True)
-    else:
-        fig, arr = plt.subplots(1, len(samples),  facecolor='white',
-                                figsize=(4 * (len(samples)), 4))
-
+    fig, arr = plt.subplots(1, len(samples), facecolor='white',
+                            figsize=(4 * (len(samples)), 4),
+                            sharex=sharexy, sharey=sharexy)
+        
     cmap = matplotlib.cm.get_cmap(cmap)
     cmap = cmap.reversed()
     d = np.sqrt(x.shape[1]).astype('int')
@@ -307,3 +304,45 @@ def visualize_mnist_layers(model, dataset, direction='inverse', sharexy=True, cm
         arr[i].imshow(X1, aspect='equal', cmap=cmap)
         arr[i].set_title(names[i])
     return fig
+
+
+def animate_mnist_gif(model, filename=None):
+    # Make GIF file
+    # - Do `brew install imagemagick` or `apt install imagemagick` first
+    from matplotlib import animation
+    from IPython.display import HTML
+    interval = 50   # ms
+    n_layers = len(model.layers)
+    n_dim = 784
+    h, w = 28, 28
+    xlim = [-4, 4]
+    ylim = [-4, 4]
+
+    fig, ax = plt.subplots()
+
+    z = np.random.randn(1, n_dim).astype('float32') * 0.75
+    results = [z]
+    for layer in reversed(model.layers):
+        z = layer.inverse(z).numpy()
+        results += [z]
+    results = [d.reshape(w, h) for d in results]
+
+    y = results[0]
+    imgs = ax.imshow(y, aspect='equal', cmap='gray')
+
+    def animate(i):
+        n = 40
+        l = i//n
+        t = (float(i % n))/n
+        #print(i, l, t)
+        y = (1-t)*results[l] + t*results[l+1]
+        imgs.set_data(y)
+        return (imgs,)
+
+    anim = animation.FuncAnimation(
+        fig, animate, frames=30*(n_layers + 1), interval=interval, blit=False);
+    if filename is not None:
+        anim.save(filename, writer='imagemagick', fps=60)
+        print(filename, 'saved')
+    #HTML(anim.to_html5_video())
+    return anim

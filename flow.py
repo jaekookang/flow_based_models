@@ -66,8 +66,8 @@ class AdditiveCouplingLayer(tfkl.Layer):
 
     def split(self, x):
         dim = self.inp_dim
-        x = tf.reshape(x, [-1, dim//2, 2])
-        return x[:,:,0], x[:,:,1]
+        x = tf.reshape(x, [-1, dim])
+        return x[:, :dim//2], x[:, dim//2:]
 
 
 class ScalingLayer(tfkl.Layer):
