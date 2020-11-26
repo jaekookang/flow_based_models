@@ -1,44 +1,55 @@
 # Flow-based Neural Network Models
 
-This repository includes TensorFlow2.x and Keras implementation of the following flow-based models:
+This repository includes TensorFlow2.x & Keras implementation of the following flow-based models:
 
 1. NICE (Dinh et al., 2014)
 2. RealNVP (Dinh et al., 2016)
-3. INN (Ardizzeone et al., 2019)
 
 Following datasets was used for testing each model.
 
-1. Moon shape data
-2. Multiple Gaussian data
-3. MNIST
-4. Speech production data (articulation-acoustics)
+1. Moon-shaped data
+2. MNIST
 
 ## Results
 
-1. Moon shape data (method comparison; 3 plots)
+|    | Moon-shaped data | MNIST |
+| :-----: | :-----: | :-----: |
+| NICE    | ![nice_moon](https://github.com/jaekookang/flow_based_models/blob/master/result/nice_moon.gif) | ![nice_mnist](https://github.com/jaekookang/flow_based_models/blob/master/result/nice_mnist.gif) |
+| RealNVP    | ![nvp_moon](https://github.com/jaekookang/flow_based_models/blob/master/result/nvp_moon.gif) | ![nvp_mnist](https://github.com/jaekookang/flow_based_models/blob/master/result/nvp_mnist.gif) |
 
 
-2. Multiple Gaussian data
+- Forward/Inverse mapping
+    - Moon-shaped data
+        - ![nvp_moon_forward](https://github.com/jaekookang/flow_based_models/blob/master/result/nvp_moon_forward.png)
+        - ![nvp_moon_inverse](https://github.com/jaekookang/flow_based_models/blob/master/result/nvp_moon_inverse.png)
+
+    - MNIST
+        - ![nvp_mnist](https://github.com/jaekookang/flow_based_models/blob/master/result/nvp_mnist.png)
+        - ![nvp_mnist_forward](https://github.com/jaekookang/flow_based_models/blob/master/result/nvp_mnist_forward.png)
+        - ![nvp_mnist_inverse](https://github.com/jaekookang/flow_based_models/blob/master/result/nvp_mnist_inverse.png)
 
 
-3. MNIST
+## Conclusions
+- Due to the invertibility of layers, it is easy to visualize and interpret layer-wise operations.
+- Implementing flow-based models is a bit finicky because the forward/inverse mapping can be changed based on the architecture and frameworks (tensorflow, tensorflow_probability, jax, pytorch).
+- The current implementations of NICE and RealNVP is not near perfect nor purely my own work.
 
+## TODO
+- [ ] Add GLOW
 
-4. Speech production data
-
-
-## Discussion & Conclusion
-The models are ...
-
-
-Here are possible plans for future:
-- [ ] Implement Glow 
-- [ ] Implement WaveGlow
-
-# See:
-code/link/websites
+# Dependencies:
+- python 3.6.9
+- tensorflow 2.3.0
+- matplotlib
+- seaborn
+- numpy
+- sklearn
 
 # References:
 - Dinh, L., Krueger, D., & Bengio, Y. (2014). NICE: Non-linear Independent Components Estimation. ArXiv, 1–13.
 - Dinh, L., Sohl-Dickstein, J., & Bengio, S. (2016). Density estimation using Real NVP. Arxiv.
-- Ardizzone, L., Kruse, J., Wirkert, S., Rahner, D., Pellegrini, E. W., Klessen, R. S., … Köthe, U. (2019). Analyzing inverse problems with invertible neural networks. 7th International Conference on Learning Representations, ICLR 2019, 1–20.
+
+# See:
+- https://github.com/ericjang/normalizing-flows-tutorial
+- https://github.com/bojone/flow
+- https://github.com/MokkeMeguru/glow-realnvp-tutorial

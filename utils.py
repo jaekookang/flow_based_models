@@ -17,7 +17,7 @@ tfkc = tfk.callbacks
 
 
 class NBatchLogger(tfkc.Callback):
-    '''A Logger that log average performance per `display` steps.
+    '''A Logger that logs the average performance per `display` steps.
 
     See: https://gist.github.com/jaekookang/7e2ca4dc2b1ab10dbb80b9e65ca91179
     '''
@@ -142,6 +142,7 @@ def visualize_moon(model, n_sample, direction='forward', sharexy=True, seed=0, x
             arr[i].set_ylim(ylim)
     return fig
 
+
 def animate_moon_gif(model, n_sample, filename=None):
     # Make GIF file
     # - Do `brew install imagemagick` or `apt install imagemagick` first
@@ -151,6 +152,7 @@ def animate_moon_gif(model, n_sample, filename=None):
     interval = 100
     xlim = [-4, 4]
     ylim = [-4, 4]
+    n_frm = 40
 
     fig, ax = plt.subplots()
     ax.set_xlim(xlim)
@@ -166,99 +168,23 @@ def animate_moon_gif(model, n_sample, filename=None):
     paths = ax.scatter(y[:, 0], y[:, 1], s=5, color='coral')
 
     def animate(i):
-        n = 40
+        n = n_frm
         l = i//n
         t = (float(i % n))/n
-        y = (1-t)*results[l] + t*results[l+1]
+        try:
+            y = (1-t)*results[l] + t*results[l+1]
+        except:
+            y = results[l]
         paths.set_offsets(y)
         return (paths,)
 
     anim = animation.FuncAnimation(
-        fig, animate, frames=40*(n_layers+1), interval=interval, blit=False);
+        fig, animate, frames=n_frm*(n_layers + 1), interval=interval, blit=False)
     if filename is not None:
         anim.save(filename, writer='imagemagick', fps=60)
         print(filename, 'saved')
-    #HTML(anim.to_html5_video())
+    # HTML(anim.to_html5_video())
     return anim
-
-
-def visualize_forward_gauss(gauss_data, labels, model, sharexy=True, colormap='Set1'):
-    # gauss_data: input data (X)
-    # labels: label for each example in init_data (np.array of integer)
-    x = gauss_data.reshape((-1, 2))
-    uq_labels = np.unique(labels)
-    samples = []
-    names = []
-
-    samples.append(x)
-    names.append('data')
-    for layer in reversed(model.layers):
-        x = layer(x)
-        samples.append(x.numpy())
-        names.append(layer.name)
-
-    if sharexy:
-        fig, arr = plt.subplots(1, len(samples), facecolor='white',
-                                figsize=(3.5 * (len(samples)+1), 3.5),
-                                sharex=True, sharey=True)
-    else:
-        fig, arr = plt.subplots(1, len(samples), facecolor='white',
-                                figsize=(3.5 * (len(samples)+1), 3.5))
-
-    cmap = sns.color_palette(colormap, len(uq_labels))
-    plt.suptitle('Data --> Latent', fontsize=20, y=1.05)
-
-    # Iterate over layer activations
-    for i, ax in zip(range(len(samples)), arr):
-        # Iterate over classes
-        ax.set_title(names[i])
-        for label, c in zip(uq_labels, cmap):
-            sample = samples[i][labels == label, :]
-            ax.scatter(sample[:, 0], sample[:, 1], s=10, color=c)
-    return fig
-
-
-def visualize_inverse_gauss(n_sample, model, sharexy=False, color_list=['red', 'green', 'blue', 'black'], seed=None):
-    # n_sample: number of random samples
-
-    if seed is not None:
-        # if you want to control the randomness
-        np.random.seed(seed)
-    init_sample = np.random.randn(n_sample, 2).astype('float32')
-
-    samples = []
-    names = []
-    samples.append(init_sample)
-    names.append('latent')
-    x = init_sample
-    for layer in reversed(model.layers):
-        x = layer.inverse(x).numpy()
-        samples.append(x)
-        names.append(layer.name)
-
-    if sharexy:
-        fig, arr = plt.subplots(1, len(model.layers)+1, facecolor='white',
-                                figsize=(3.5 * (len(model.layers)+1), 3.5),
-                                sharex=True, sharey=True)
-    else:
-        fig, arr = plt.subplots(1, len(model.layers)+1, facecolor='white',
-                                figsize=(3.5 * (len(model.layers)+1), 3.5))
-    plt.suptitle('Latent --> Data', fontsize=20, y=1.05)
-
-    # Divide 4 quadrants for tracing transformation
-    X0 = samples[0]
-    for i in range(len(samples)):
-        X1 = samples[i]
-        idx = np.logical_and(X1[:, 0] < 0, X0[:, 1] < 0)
-        arr[i].scatter(X1[idx, 0], X1[idx, 1], s=10, color=color_list[0])
-        idx = np.logical_and(X0[:, 0] > 0, X0[:, 1] < 0)
-        arr[i].scatter(X1[idx, 0], X1[idx, 1], s=10, color=color_list[1])
-        idx = np.logical_and(X0[:, 0] < 0, X0[:, 1] > 0)
-        arr[i].scatter(X1[idx, 0], X1[idx, 1], s=10, color=color_list[2])
-        idx = np.logical_and(X0[:, 0] > 0, X0[:, 1] > 0)
-        arr[i].scatter(X1[idx, 0], X1[idx, 1], s=10, color=color_list[3])
-        arr[i].set_title(names[i])
-    return fig
 
 
 def visualize_mnist_layers(model, dataset, direction='inverse', sharexy=True, cmap='gray'):
@@ -267,7 +193,7 @@ def visualize_mnist_layers(model, dataset, direction='inverse', sharexy=True, cm
     dataset: tf dataset for MNIST
     direction: 'forward' means from data to latent 
                'inverse' means from latent to data
-    **dataset** is required
+    **dataset** is required (tf dataset)
     '''
     samples = []
     names = []
@@ -295,7 +221,7 @@ def visualize_mnist_layers(model, dataset, direction='inverse', sharexy=True, cm
     fig, arr = plt.subplots(1, len(samples), facecolor='white',
                             figsize=(4 * (len(samples)), 4),
                             sharex=sharexy, sharey=sharexy)
-        
+
     cmap = matplotlib.cm.get_cmap(cmap)
     cmap = cmap.reversed()
     d = np.sqrt(x.shape[1]).astype('int')
@@ -317,6 +243,7 @@ def animate_mnist_gif(model, filename=None):
     h, w = 28, 28
     xlim = [-4, 4]
     ylim = [-4, 4]
+    n_frm = 30
 
     fig, ax = plt.subplots()
 
@@ -331,18 +258,20 @@ def animate_mnist_gif(model, filename=None):
     imgs = ax.imshow(y, aspect='equal', cmap='gray')
 
     def animate(i):
-        n = 40
+        n = n_frm
         l = i//n
         t = (float(i % n))/n
-        #print(i, l, t)
-        y = (1-t)*results[l] + t*results[l+1]
+        try:
+            y = (1-t)*results[l] + t*results[l+1]
+        except:
+            y = results[l]
         imgs.set_data(y)
         return (imgs,)
 
     anim = animation.FuncAnimation(
-        fig, animate, frames=30*(n_layers + 1), interval=interval, blit=False);
+        fig, animate, frames=n_frm*(n_layers + 1), interval=interval, blit=False)
     if filename is not None:
         anim.save(filename, writer='imagemagick', fps=60)
         print(filename, 'saved')
-    #HTML(anim.to_html5_video())
+    # HTML(anim.to_html5_video())
     return anim
