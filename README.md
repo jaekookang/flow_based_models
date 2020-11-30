@@ -5,7 +5,7 @@ This repository includes TensorFlow2.x & Keras implementation of the following f
 1. NICE (Dinh et al., 2014)
 2. RealNVP (Dinh et al., 2016)
 
-Following datasets was used for testing each model.
+Following datasets were used for testing each model.
 
 1. Moon-shaped data
 2. MNIST
